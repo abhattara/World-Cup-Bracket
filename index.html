@@ -93,7 +93,7 @@
     <header>
         <h1>WORLD CUP 2026 MATCHDAY ARENA</h1>
     </header>
-    <div class="status-bar" id="statusMsg">Loading cloud state database...</div>
+    <div class="status-bar" id="statusMsg">Connecting to cloud network...</div>
 
     <div class="dashboard-grid">
         <div class="pane">
@@ -101,7 +101,7 @@
                 <span>📊 Live Standings</span>
                 <button class="rules-btn" onclick="toggleRules(true)">📋 View Rules</button>
             </div>
-            <div id="scoreboardContainer">Loading rankings...</div>
+            <div id="scoreboardContainer">Recalculating score modules...</div>
         </div>
 
         <div class="pane">
@@ -146,8 +146,8 @@
     </div>
 
 <script>
-    // New, isolated bucket endpoint to clear out old legacy cached objects completely
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v4_stable";
+    // New fresh database endpoint to clear all bad legacy keys
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v5_stable";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -177,7 +177,7 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Data framework synced. Lock in your predictions!" }]
+        trashTalk: [{ name: "System", msg: "Data matrix active. Lock in your choices!" }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
@@ -199,12 +199,12 @@
                 const data = await response.json();
                 if(data && data.users) { 
                     appState = data; 
-                    status.innerText = "✓ Sync successful. Live predictions loaded."; 
+                    status.innerText = "✓ System live. Connected to cloud data module."; 
                 }
             } else {
-                status.innerText = "Cloud initialization ready.";
+                status.innerText = "Cloud database initialization ready.";
             }
-        } catch(e) { status.innerText = "Working locally..."; }
+        } catch(e) { status.innerText = "Error pulling cloud data."; }
         calculatePoints();
         buildBracket();
         buildTrashWall();
