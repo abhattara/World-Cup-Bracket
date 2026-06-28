@@ -132,8 +132,8 @@
         <div class="modal-card">
             <h2 style="margin-top:0; color:#818cf8;">📋 Scoring Rules & System</h2>
             <ul class="rules-list" style="padding-left: 20px;">
-                <li><strong>Outcome Match Pick (+10 PTS):</strong> Earn 10 points for predicting the correct advancing country.</li>
-                <li><strong>Exact Score Bonus (+5 PTS):</strong> Guess the exact match score correctly to secure an additional 5 points.</li>
+                <li><strong>Correct Advancing Team (+10 PTS):</strong> Pick the correct winner moving to the next round.</li>
+                <li><strong>Correct Score Prediction (+15 PTS):</strong> Match the exact goal tally for a massive points boost!</li>
                 <li><strong>Draw Matches:</strong> If you predict a draw score, click directly on your chosen winner to pick who wins the penalty shootout.</li>
             </ul>
             <button class="modal-close" onclick="toggleRules(false)">Close Rules</button>
@@ -146,8 +146,8 @@
     </div>
 
 <script>
-    // New fresh database endpoint to clear all bad legacy keys
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v5_stable";
+    // Completely fresh database instance parameter line to completely flush historical rule formats
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v7_final_scores";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -177,7 +177,7 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Data matrix active. Lock in your choices!" }]
+        trashTalk: [{ name: "System", msg: "Framework live with new point parameters: 10 for team, 15 for score." }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
@@ -199,12 +199,12 @@
                 const data = await response.json();
                 if(data && data.users) { 
                     appState = data; 
-                    status.innerText = "✓ System live. Connected to cloud data module."; 
+                    status.innerText = "✓ Connected to cloud data module."; 
                 }
             } else {
-                status.innerText = "Cloud database initialization ready.";
+                status.innerText = "Database live and initialized.";
             }
-        } catch(e) { status.innerText = "Error pulling cloud data."; }
+        } catch(e) { status.innerText = "Local cache execution active."; }
         calculatePoints();
         buildBracket();
         buildTrashWall();
@@ -213,7 +213,7 @@
 
     async function saveToCloud() {
         const status = document.getElementById('statusMsg');
-        status.innerText = "Uploading configuration updates to cloud...";
+        status.innerText = "Syncing layout array adjustments with network pool...";
         try {
             await fetch(DB_URL, { method: 'POST', body: JSON.stringify(appState) });
             status.innerText = "✓ Board saved successfully!";
@@ -226,11 +226,18 @@
         let standings = appState.users.map(user => {
             let pts = 0;
             Object.keys(appState.officialResults.picks).forEach(matchId => {
+                // 1. Check correct advancing team prediction (+10 PTS)
                 if(user.picks[matchId] && user.picks[matchId] === appState.officialResults.picks[matchId]) {
                     pts += 10;
-                    const s0 = user.scores[`${matchId}_t0`], s1 = user.scores[`${matchId}_t1`];
-                    const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
-                    if(s0 !== undefined && s0 === r0 && s1 !== undefined && s1 === r1) pts += 5;
+                }
+                
+                // 2. Check exact score layout prediction (+15 PTS) independently
+                const s0 = user.scores[`${matchId}_t0`], s1 = user.scores[`${matchId}_t1`];
+                const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
+                if(s0 !== undefined && r0 !== undefined && s1 !== undefined && r1 !== undefined && s0 !== "" && s1 !== "") {
+                    if(String(s0).trim() === String(r0).trim() && String(s1).trim() === String(r1).trim()) {
+                        pts += 15;
+                    }
                 }
             });
             return { name: user.name, points: pts };
@@ -243,132 +250,4 @@
 
     function checkDrawConflict(matchId) {
         let profile = appState.users[currentProfile];
-        const s0 = profile.scores[`${matchId}_t0`], s1 = profile.scores[`${matchId}_t1`];
-        if(s0 && s1 && s0 === s1) {
-            alert("⚽ You predicted a Draw! Knockout games must have a winner. Click on the team you want to advance via Extra Time / Penalties.");
-        }
-    }
-
-    function buildBracket() {
-        const container = document.getElementById('bracket');
-        container.innerHTML = '';
-        let profile = appState.users[currentProfile];
-        
-        let roundsData = [];
-        let r1Matches = initialTeams.map((teams, i) => ({ id: `r1-m${i}`, teams }));
-        roundsData.push(r1Matches);
-
-        for (let r = 1; r < 5; r++) {
-            let prevRound = roundsData[r-1];
-            let currentRoundMatches = [];
-            for (let m = 0; m < prevRound.length; m += 2) {
-                let t1 = profile.picks[prevRound[m].id] || "TBD";
-                let t2 = profile.picks[prevRound[m+1]?.id] || "TBD";
-                currentRoundMatches.push({ id: `r${r+1}-m${m/2}`, teams: [t1, t2] });
-            }
-            roundsData.push(currentRoundMatches);
-        }
-
-        roundsData.forEach((roundMatches, rIdx) => {
-            const roundDiv = document.createElement('div');
-            roundDiv.className = 'round';
-            roundDiv.innerHTML = `<div class="round-title">${roundNames[rIdx]}</div>`;
-
-            roundMatches.forEach(match => {
-                const matchDiv = document.createElement('div');
-                matchDiv.className = 'matchup';
-                let winner = profile.picks[match.id];
-
-                match.teams.forEach((team, tIdx) => {
-                    const slot = document.createElement('div');
-                    slot.className = `team-slot ${winner === team && team !== 'TBD' ? 'selected' : ''}`;
-                    
-                    const meta = document.createElement('div');
-                    meta.className = 'team-meta';
-                    meta.innerHTML = `<img class="flag-img" src="${getFlag(team)}"><span class="team-name">${team}</span>`;
-                    slot.appendChild(meta);
-
-                    if (team !== 'TBD') {
-                        slot.onclick = (e) => { 
-                            if(e.target.tagName !== 'INPUT') { 
-                                profile.picks[match.id] = team; 
-                                buildBracket(); 
-                            } 
-                        };
-                        const scoreInput = document.createElement('input');
-                        scoreInput.type = 'text'; scoreInput.className = 'score-input'; scoreInput.maxLength = 2;
-                        let skey = `${match.id}_t${tIdx}`;
-                        scoreInput.value = profile.scores[skey] || '';
-                        scoreInput.oninput = (e) => { 
-                            profile.scores[skey] = e.target.value; 
-                            checkDrawConflict(match.id);
-                        };
-                        slot.appendChild(scoreInput);
-                    }
-                    matchDiv.appendChild(slot);
-                });
-                roundDiv.appendChild(matchDiv);
-            });
-            container.appendChild(roundDiv);
-        });
-
-        const champRound = document.createElement('div');
-        champRound.className = 'round';
-        champRound.innerHTML = `<div class="round-title">🏆 Champion</div>`;
-        let lastMatchId = 'r5-m0';
-        let champ = profile.picks[lastMatchId] || 'TBD';
-        champRound.innerHTML += `<div class="matchup" style="border-color:#fbbf24; text-align:center; padding:15px; font-weight:900; color:#fbbf24; display:flex; align-items:center; justify-content:center; gap:8px;"><img class="flag-img" src="${getFlag(champ)}">${champ}</div>`;
-        container.appendChild(champRound);
-    }
-
-    function buildAdminConsole() {
-        const container = document.getElementById('adminControls');
-        let keys = [];
-        for(let i=0; i<16; i++) keys.push(`r1-m${i}`);
-        
-        container.innerHTML = keys.map((mid, idx) => `
-            <div style="background:rgba(0,0,0,0.2); padding:8px; border-radius:8px;">
-                <strong style="font-size:0.75rem; display:block; margin-bottom:4px; color:#f87171;">M-${idx+1} Result</strong>
-                <select onchange="setOfficialWinner('${mid}', this.value)" style="background:#222; color:#fff; border:1px solid #444; border-radius:4px; font-size:0.8rem; width:100%; padding:2px;">
-                    <option value="">Winner</option>
-                    <option value="${initialTeams[idx][0]}" ${appState.officialResults.picks[mid]===initialTeams[idx][0]?'selected':''}>${initialTeams[idx][0]}</option>
-                    <option value="${initialTeams[idx][1]}" ${appState.officialResults.picks[mid]===initialTeams[idx][1]?'selected':''}>${initialTeams[idx][1]}</option>
-                </select>
-                <div style="display:flex; gap:4px; margin-top:4px;">
-                    <input placeholder="S1" value="${appState.officialResults.scores[`${mid}_t0`]||''}" oninput="appState.officialResults.scores['${mid}_t0']=this.value; saveToCloud();" style="width:50%; background:#000; border:1px solid #333; color:#fff; font-size:0.75rem; text-align:center;">
-                    <input placeholder="S2" value="${appState.officialResults.scores[`${mid}_t1`]||''}" oninput="appState.officialResults.scores['${mid}_t1']=this.value; saveToCloud();" style="width:50%; background:#000; border:1px solid #333; color:#fff; font-size:0.75rem; text-align:center;">
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function setOfficialWinner(matchId, team) {
-        if(!team) delete appState.officialResults.picks[matchId];
-        else appState.officialResults.picks[matchId] = team;
-        saveToCloud();
-    }
-
-    function switchProfile(id) {
-        currentProfile = id;
-        document.querySelectorAll('.profile-btn').forEach((btn, idx) => { btn.classList.toggle('active', idx === id); });
-        buildBracket();
-    }
-
-    function buildTrashWall() {
-        const wall = document.getElementById('trashWall');
-        wall.innerHTML = appState.trashTalk.map(t => `<div class="wall-msg"><strong>${t.name}:</strong> ${t.msg}</div>`).join('');
-        wall.scrollTop = wall.scrollHeight;
-    }
-
-    function postTrash() {
-        const input = document.getElementById('trashTxt');
-        if(!input.value.trim()) return;
-        appState.trashTalk.push({ name: appState.users[currentProfile].name, msg: input.value });
-        if(appState.trashTalk.length > 20) appState.trashTalk.shift();
-        input.value = ''; buildTrashWall(); saveToCloud();
-    }
-
-    loadFromCloud();
-</script>
-</body>
-</html>
+        const s0 = profile.scores[`${matchId}_t0`], s
