@@ -76,4 +76,279 @@
         .team-slot.selected { background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; }
         
         /* Modal Popup Window */
-        .modal
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-card { background: #111827; border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .modal-close { background: #ef4444; color: white; border: none; padding: 0.5rem 1.25rem; border-radius: 8px; cursor: pointer; font-weight: 700; float: right; margin-top: 1rem; }
+        .rules-list li { margin-bottom: 0.75rem; font-size: 0.95rem; line-height: 1.5; color: #cbd5e1; }
+
+        .admin-panel { background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.3); margin-top: 3rem; border-radius: 16px; padding: 1.5rem; }
+        .action-container { display: flex; justify-content: center; margin-top: 2rem; gap: 1rem; }
+        .share-btn { background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; padding: 1.1rem 3rem; font-size: 1rem; font-weight: 800; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>WORLD CUP 2026 MATCHDAY ARENA</h1>
+    </header>
+    <div class="status-bar" id="statusMsg">Loading cloud state database...</div>
+
+    <div class="dashboard-grid">
+        <div class="pane">
+            <div class="pane-title">
+                <span>📊 Live Standings</span>
+                <button class="rules-btn" onclick="toggleRules(true)">📋 View Rules</button>
+            </div>
+            <div id="scoreboardContainer">Loading rankings...</div>
+        </div>
+
+        <div class="pane">
+            <div class="pane-title">💬 Locker Room Trash Talk</div>
+            <div id="trashWall" style="max-height: 120px; overflow-y: auto; margin-bottom: 0.5rem;"></div>
+            <div class="trash-input-box">
+                <input type="text" id="trashTxt" class="chat-input" placeholder="Type some spicy commentary...">
+                <button class="chat-btn" onclick="postTrash()">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-bar">
+        <button class="profile-btn active" onclick="switchProfile(0)">Abhi</button>
+        <button class="profile-btn" onclick="switchProfile(1)">Samit</button>
+        <button class="profile-btn" onclick="switchProfile(2)">Bhargav</button>
+        <button class="profile-btn" onclick="switchProfile(3)">Bijay</button>
+        <button class="profile-btn" onclick="switchProfile(4)">Shruti</button>
+    </div>
+
+    <div class="bracket-container" id="bracket"></div>
+
+    <div class="action-container">
+        <button class="share-btn" onclick="saveToCloud()">☁️ Save & Sync My Predictions</button>
+    </div>
+
+    <div class="modal-overlay" id="rulesModal">
+        <div class="modal-card">
+            <h2 style="margin-top:0; color:#818cf8;">📋 Scoring Rules & System</h2>
+            <ul class="rules-list" style="padding-left: 20px;">
+                <li><strong>Outcome Match Pick (+10 PTS):</strong> Earn 10 points simply for successfully predicting the correct advancing country.</li>
+                <li><strong>Exact Score Bonus (+5 PTS):</strong> Guess the exact final match score correctly to secure an additional 5-point modifier bonus.</li>
+                <li><strong>Locked Inputs Constraint:</strong> Lock and upload your final bracket submissions prior to match kickoff intervals.</li>
+                <li><strong>Leaderboard Updates:</strong> Standings recalculate instantly once official results are fed into the Master Controller.</li>
+            </ul>
+            <button class="modal-close" onclick="toggleRules(false)">Close Rules</button>
+        </div>
+    </div>
+
+    <div class="admin-panel">
+        <div class="pane-title" style="color: #f87171; border-color: rgba(239, 68, 68, 0.2);">🚨 Match Day Master Controller (Results Desk)</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">When a real game concludes, select who won and add the true score below to automatically compute live league leaderboard rankings.</p>
+        <div id="adminControls" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;"></div>
+    </div>
+
+<script>
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_worldcup_arena_v2";
+
+    const flags = {
+        "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
+        "Germany": "de", "Paraguay": "py", "Netherlands": "nl", "Morocco": "ma",
+        "Ivory Coast": "ci", "Norway": "no", "France": "fr", "Sweden": "se",
+        "Mexico": "mx", "Ecuador": "ec", "England": "gb", "DR Congo": "cd",
+        "Belgium": "be", "Senegal": "sn", "United States": "us", "Bosnia": "ba",
+        "Spain": "es", "Austria": "at", "Portugal": "pt", "Croatia": "hr",
+        "Switzerland": "ch", "Algeria": "dz", "Australia": "au", "Egypt": "eg",
+        "Argentina": "ar", "Cabo Verde": "cv", "Colombia": "co", "Ghana": "gh", "TBD": ""
+    };
+
+    const initialTeams = [
+        ["South Africa", "Canada"], ["Brazil", "Japan"], ["Germany", "Paraguay"], ["Netherlands", "Morocco"],
+        ["Ivory Coast", "Norway"], ["France", "Sweden"], ["Mexico", "Ecuador"], ["England", "DR Congo"],
+        ["Belgium", "Senegal"], ["United States", "Bosnia"], ["Spain", "Austria"], ["Portugal", "Croatia"],
+        ["Switzerland", "Algeria"], ["Australia", "Egypt"], ["Argentina", "Cabo Verde"], ["Colombia", "Ghana"]
+    ];
+
+    let currentProfile = 0;
+    let appState = {
+        users: [
+            { name: "Abhi", picks: {}, scores: {} },
+            { name: "Samit", picks: {}, scores: {} },
+            { name: "Bhargav", picks: {}, scores: {} },
+            { name: "Bijay", picks: {}, scores: {} },
+            { name: "Shruti", picks: {}, scores: {} }
+        ],
+        officialResults: { picks: {}, scores: {} },
+        trashTalk: [
+            { name: "System", msg: "Welcome to the 2026 Final Knockouts! Lock in your picks." }
+        ]
+    };
+
+    const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
+
+    function toggleRules(show) {
+        document.getElementById('rulesModal').style.display = show ? 'flex' : 'none';
+    }
+
+    function getFlag(team) {
+        if(!team || team === "TBD" || !flags[team]) return 'https://flagcdn.com/24x16/un.png';
+        return `https://flagcdn.com/24x16/${flags[team]}.png`;
+    }
+
+    async function loadFromCloud() {
+        const status = document.getElementById('statusMsg');
+        try {
+            const response = await fetch(DB_URL);
+            if(response.ok) {
+                const data = await response.json();
+                if(data && data.users) {
+                    appState = data;
+                    status.innerText = "✓ Sync successful. Viewing latest real-time leaderboard data.";
+                }
+            }
+        } catch(e) {}
+        calculatePoints();
+        buildBracket();
+        buildTrashWall();
+        buildAdminConsole();
+    }
+
+    async function saveToCloud() {
+        const status = document.getElementById('statusMsg');
+        status.innerText = "Syncing layout updates directly with cloud database...";
+        try {
+            await fetch(DB_URL, { method: 'POST', body: JSON.stringify(appState) });
+            status.innerText = "✓ Changes saved. Standings recalculated instantly.";
+            calculatePoints();
+        } catch(e) { alert("Network dropped. Failed to store updates."); }
+    }
+
+    function calculatePoints() {
+        let standings = appState.users.map(user => {
+            let pts = 0;
+            Object.keys(appState.officialResults.picks).forEach(matchId => {
+                if(user.picks[matchId] === appState.officialResults.picks[matchId]) {
+                    pts += 10; 
+                    const s0_key = `${matchId}_t00`;
+                    const s1_key = `${matchId}_t01`;
+                    if(user.scores[s0_key] === appState.officialResults.scores[s0_key] &&
+                       user.scores[s1_key] === appState.officialResults.scores[s1_key]) {
+                        pts += 5; 
+                    }
+                }
+            });
+            return { name: user.name, points: pts };
+        });
+
+        standings.sort((a,b) => b.points - a.points);
+        const box = document.getElementById('scoreboardContainer');
+        box.innerHTML = standings.map((u, i) => `
+            <div class="leaderboard-row rank-${i}">
+                <span>${i === 0 ? '👑' : `#${i+1}`} ${u.name}</span>
+                <span>${u.points} PTS</span>
+            </div>
+        `).join('');
+    }
+
+    function buildBracket() {
+        const container = document.getElementById('bracket');
+        container.innerHTML = '';
+        let currentRoundMatches = initialTeams.map((teams, index) => ({ id: `r1-m${index}`, teams }));
+        let profileData = appState.users[currentProfile];
+
+        for (let r = 0; r < 5; r++) {
+            const roundDiv = document.createElement('div');
+            roundDiv.className = 'round';
+            roundDiv.innerHTML = `<div class="round-title">${roundNames[r]}</div>`;
+            let nextRoundMatches = [];
+
+            for (let m = 0; m < currentRoundMatches.length; m++) {
+                const match = currentRoundMatches[m];
+                const matchDiv = document.createElement('div');
+                matchDiv.className = 'matchup';
+                const savedWinner = profileData.picks[match.id];
+
+                match.teams.forEach((team, tIdx) => {
+                    const displayTeam = team || 'TBD';
+                    const slot = document.createElement('div');
+                    slot.className = `team-slot ${savedWinner === displayTeam && displayTeam !== 'TBD' ? 'selected' : ''}`;
+                    
+                    const meta = document.createElement('div');
+                    meta.className = 'team-meta';
+                    meta.innerHTML = `<img class="flag-img" src="${getFlag(displayTeam)}"><span class="team-name">${displayTeam}</span>`;
+                    slot.appendChild(meta);
+
+                    if(displayTeam !== 'TBD') {
+                        slot.onclick = (e) => { if(e.target.tagName !== 'INPUT') selectWinner(match.id, displayTeam); };
+                        const scoreInput = document.createElement('input');
+                        scoreInput.type = 'text'; scoreInput.className = 'score-input'; scoreInput.maxLength = 2;
+                        const scoreKey = `${match.id}_t0${tIdx}`;
+                        scoreInput.value = profileData.scores[scoreKey] || '';
+                        scoreInput.oninput = (e) => { profileData.scores[scoreKey] = e.target.value; };
+                        slot.appendChild(scoreInput);
+                    }
+                    matchDiv.appendChild(slot);
+                });
+                roundDiv.appendChild(matchDiv);
+
+                if (m % 2 === 0) {
+                    let nextMatchId = `r${r+2}-m${Math.floor(m/2)}`;
+                    nextRoundMatches.push({ id: nextMatchId, teams: [profileData.picks[match.id] || null, profileData.picks[currentRoundMatches[m+1]?.id] || null] });
+                }
+            }
+            container.appendChild(roundDiv);
+            currentRoundMatches = nextRoundMatches;
+        }
+    }
+
+    function buildAdminConsole() {
+        const container = document.getElementById('adminControls');
+        container.innerHTML = initialTeams.map((teams, index) => {
+            const mid = `r1-m${index}`;
+            return `
+                <div style="background:rgba(0,0,0,0.2); padding:8px; border-radius:8px;">
+                    <strong style="font-size:0.8rem; display:block; margin-bottom:4px;">Match ${index+1}</strong>
+                    <select onchange="setOfficialWinner('${mid}', this.value)" style="background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:3px; font-size:0.8rem; width:100%;">
+                        <option value="">Select Winner</option>
+                        <option value="${teams[0]}" ${appState.officialResults.picks[mid]===teams[0]?'selected':''}>${teams[0]}</option>
+                        <option value="${teams[1]}" ${appState.officialResults.picks[mid]===teams[1]?'selected':''}>${teams[1]}</option>
+                    </select>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setOfficialWinner(matchId, team) {
+        if(!team) delete appState.officialResults.picks[matchId];
+        else appState.officialResults.picks[matchId] = team;
+        saveToCloud();
+    }
+
+    function selectWinner(matchId, selectedTeam) {
+        appState.users[currentProfile].picks[matchId] = selectedTeam;
+        buildBracket();
+    }
+
+    function switchProfile(id) {
+        currentProfile = id;
+        document.querySelectorAll('.profile-btn').forEach((btn, idx) => { btn.classList.toggle('active', idx === id); });
+        buildBracket();
+    }
+
+    function buildTrashWall() {
+        const wall = document.getElementById('trashWall');
+        wall.innerHTML = appState.trashTalk.map(t => `<div class="wall-msg"><strong>${t.name}:</strong> ${t.msg}</div>`).join('');
+        wall.scrollTop = wall.scrollHeight;
+    }
+
+    function postTrash() {
+        const input = document.getElementById('trashTxt');
+        if(!input.value.trim()) return;
+        appState.trashTalk.push({ name: appState.users[currentProfile].name, msg: input.value });
+        if(appState.trashTalk.length > 25) appState.trashTalk.shift(); 
+        input.value = '';
+        buildTrashWall();
+        saveToCloud();
+    }
+
+    loadFromCloud();
+</script>
+</body>
+</html>
