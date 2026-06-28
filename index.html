@@ -3,145 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏆 World Cup 2026 - Elite Bracket</title>
+    <title>🏆 World Cup 2026 - Elite Bracket Pro</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --bg-layer: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 27, 75, 0.95) 100%);
+            --glass-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --accent-glow: #6366f1;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
         }
         body {
             font-family: system-ui, -apple-system, sans-serif;
-            background: var(--bg-gradient);
+            background: url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1920') no-repeat center center fixed;
+            background-size: cover;
             color: var(--text-main);
             min-height: 100vh;
             margin: 0;
             padding: 2rem;
             box-sizing: border-box;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top:0; left:0; right:0; bottom:0;
+            background: var(--bg-layer);
+            z-index: 0;
+        }
+        header, .profile-bar, .bracket-container, .action-container {
+            position: relative;
+            z-index: 1;
         }
         header { text-align: center; margin-bottom: 2rem; }
         h1 {
-            font-weight: 800;
+            font-weight: 900;
             letter-spacing: -0.05em;
-            background: linear-gradient(to right, #6366f1, #ec4899);
+            background: linear-gradient(to right, #4f46e5, #c084fc, #db2777);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 0 0 0.5rem 0;
+            text-transform: uppercase;
         }
-        .profile-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 3rem; }
+        .profile-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 3rem; }
         .profile-btn {
-            background: var(--glass-bg);
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--glass-border);
             color: var(--text-muted);
-            padding: 0.75rem 1.5rem;
-            border-radius: 12px;
+            padding: 0.85rem 1.75rem;
+            border-radius: 14px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .profile-btn.active {
             color: white;
-            background: rgba(99, 102, 241, 0.2);
-            border-color: var(--accent-glow);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+            background: rgba(99, 102, 241, 0.35);
+            border-color: #818cf8;
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);
         }
-        .bracket-container { display: flex; gap: 2.5rem; overflow-x: auto; padding: 1rem 0; }
-        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 240px; }
-        .round-title { text-align: center; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 1rem; font-weight: 700; }
-        .matchup { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px; padding: 6px; margin: 1rem 0; }
-        .team-slot { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.8rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        .team-slot:hover { background: rgba(255, 255, 255, 0.05); }
-        .team-slot.selected { background: rgba(34, 197, 94, 0.15); color: #4ade80; font-weight: 700; }
-        .action-container { display: flex; justify-content: center; margin-top: 3rem; }
-        .share-btn { background: linear-gradient(90deg, #6366f1, #a855f7); color: white; border: none; padding: 1rem 2.5rem; font-size: 1rem; font-weight: 700; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3); }
+        .bracket-container { display: flex; gap: 2.5rem; overflow-x: auto; padding: 1rem 0; scroll-behavior: smooth; }
+        .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 280px; }
+        .round-title { text-align: center; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; color: #cbd5e1; margin-bottom: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .matchup { background: rgba(15, 23, 42, 0.55); border: 1px solid var(--glass-border); border-radius: 16px; padding: 8px; margin: 1.2rem 0; backdrop-filter: blur(16px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .team-slot { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; margin: 4px 0; }
+        .team-slot:hover { background: rgba(255, 255, 255, 0.08); }
+        .team-meta { display: flex; align-items: center; gap: 10px; pointer-events: none; }
+        .flag-img { width: 24px; height: 16px; object-fit: cover; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .team-name { font-weight: 600; font-size: 0.95rem; }
+        .score-input { width: 35px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; text-align: center; padding: 4px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; }
+        .score-input:focus { border-color: var(--accent-glow); outline: none; }
+        .team-slot.selected { background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; }
+        .action-container { display: flex; justify-content: center; margin-top: 3.5rem; }
+        .share-btn { background: linear-gradient(90deg, #4f46e5, #7c3aed); color: white; border: none; padding: 1.1rem 3rem; font-size: 1rem; font-weight: 800; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(124, 58, 237, 0.4); transition: transform 0.2s; }
+        .share-btn:hover { transform: translateY(-2px); }
     </style>
 </head>
 <body>
+
     <header>
-        <h1>WORLD CUP 2026 BRACKET</h1>
-        <p style="color: var(--text-muted);">Switch profiles, make predictions, share custom links.</p>
+        <h1>WORLD CUP 2026 ELITE</h1>
+        <p style="color: var(--text-muted); font-weight: 500;">Predict results, track scores, and sync brackets.</p>
     </header>
+
     <div class="profile-bar">
         <button class="profile-btn active" onclick="switchProfile(0)">Your Bracket</button>
-        <button class="profile-btn" onclick="switchProfile(1)">Friend 1</button>
-        <button class="profile-btn" onclick="switchProfile(2)">Friend 2</button>
-        <button class="profile-btn" onclick="switchProfile(3)">Friend 3</button>
+        <button class="profile-btn" onclick="switchProfile(1)">Samit</button>
+        <button class="profile-btn" onclick="switchProfile(2)">Bhargav</button>
+        <button class="profile-btn" onclick="switchProfile(3)">Bijay</button>
     </div>
+
     <div class="bracket-container" id="bracket"></div>
-    <div class="action-container"><button class="share-btn" onclick="shareBracket()">🔗 Copy Shareable Web Link</button></div>
+
+    <div class="action-container">
+        <button class="share-btn" onclick="shareBracket()">🔗 Sync & Save Complete Bracket League</button>
+    </div>
+
 <script>
+    const flags = {
+        "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
+        "Germany": "de", "Paraguay": "py", "Netherlands": "nl", "Morocco": "ma",
+        "Ivory Coast": "ci", "Norway": "no", "France": "fr", "Sweden": "se",
+        "Mexico": "mx", "Ecuador": "ec", "England": "gb", "DR Congo": "cd",
+        "Belgium": "be", "Senegal": "sn", "United States": "us", "Bosnia": "ba",
+        "Spain": "es", "Austria": "at", "Portugal": "pt", "Croatia": "hr",
+        "Switzerland": "ch", "Algeria": "dz", "Australia": "au", "Egypt": "eg",
+        "Argentina": "ar", "Cabo Verde": "cv", "Colombia": "co", "Ghana": "gh", "TBD": ""
+    };
+
     const initialTeams = [
         ["South Africa", "Canada"], ["Brazil", "Japan"], ["Germany", "Paraguay"], ["Netherlands", "Morocco"],
         ["Ivory Coast", "Norway"], ["France", "Sweden"], ["Mexico", "Ecuador"], ["England", "DR Congo"],
         ["Belgium", "Senegal"], ["United States", "Bosnia"], ["Spain", "Austria"], ["Portugal", "Croatia"],
         ["Switzerland", "Algeria"], ["Australia", "Egypt"], ["Argentina", "Cabo Verde"], ["Colombia", "Ghana"]
     ];
+
     let currentProfile = 0;
-    let globalStore = [{}, {}, {}, {}];
+    let globalStore = [
+        { picks: {}, scores: {} }, // You
+        { picks: {}, scores: {} }, // Samit
+        { picks: {}, scores: {} }, // Bhargav
+        { picks: {}, scores: {} }  // Bijay
+    ];
+
     const urlParams = new URLSearchParams(window.location.search);
     if(urlParams.has('d')) {
-        try { globalStore = JSON.parse(atob(urlParams.get('d'))); } catch(e) {}
+        try { globalStore = JSON.parse(atob(urlParams.get('d'))); } catch(e) { console.error(e); }
     }
+
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
+
+    function getFlag(team) {
+        if(!team || team === "TBD" || !flags[team]) return 'https://flagcdn.com/24x16/un.png';
+        return `https://flagcdn.com/24x16/${flags[team]}.png`;
+    }
+
     function buildBracket() {
         const container = document.getElementById('bracket');
         container.innerHTML = '';
         let currentRoundMatches = initialTeams.map((teams, index) => ({ id: `r1-m${index}`, teams }));
         let profileData = globalStore[currentProfile];
+
         for (let r = 0; r < 5; r++) {
             const roundDiv = document.createElement('div');
             roundDiv.className = 'round';
             roundDiv.innerHTML = `<div class="round-title">${roundNames[r]}</div>`;
             let nextRoundMatches = [];
+
             for (let m = 0; m < currentRoundMatches.length; m++) {
                 const match = currentRoundMatches[m];
                 const matchDiv = document.createElement('div');
                 matchDiv.className = 'matchup';
-                const savedWinner = profileData[match.id];
-                match.teams.forEach(team => {
+                const savedWinner = profileData.picks[match.id];
+
+                match.teams.forEach((team, tIdx) => {
+                    const displayTeam = team || 'TBD';
                     const slot = document.createElement('div');
-                    slot.className = `team-slot ${savedWinner === team ? 'selected' : ''}`;
-                    slot.innerText = team || 'TBD';
-                    if(team) { slot.onclick = () => selectWinner(r, m, match.id, team); }
+                    slot.className = `team-slot ${savedWinner === displayTeam && displayTeam !== 'TBD' ? 'selected' : ''}`;
+                    
+                    const meta = document.createElement('div');
+                    meta.className = 'team-meta';
+                    meta.innerHTML = `<img class="flag-img" src="${getFlag(displayTeam)}"><span class="team-name">${displayTeam}</span>`;
+                    slot.appendChild(meta);
+
+                    if(displayTeam !== 'TBD') {
+                        slot.onclick = (e) => {
+                            if(e.target.tagName !== 'INPUT') selectWinner(r, m, match.id, displayTeam);
+                        };
+
+                        const scoreInput = document.createElement('input');
+                        scoreInput.type = 'text';
+                        scoreInput.className = 'score-input';
+                        scoreInput.maxLength = 2;
+                        const scoreKey = `${match.id}_t${tIdx}`;
+                        scoreInput.value = profileData.scores[scoreKey] || '';
+                        scoreInput.oninput = (e) => {
+                            profileData.scores[scoreKey] = e.target.value;
+                        };
+                        slot.appendChild(scoreInput);
+                    }
                     matchDiv.appendChild(slot);
                 });
+
                 roundDiv.appendChild(matchDiv);
+
                 if (m % 2 === 0) {
                     let nextMatchId = `r${r+2}-m${Math.floor(m/2)}`;
-                    let nextTeams = [profileData[match.id] || null];
+                    let nextTeams = [profileData.picks[match.id] || null];
                     let siblingMatch = currentRoundMatches[m+1];
-                    if (siblingMatch) { nextTeams.push(profileData[siblingMatch.id] || null); }
+                    if (siblingMatch) { nextTeams.push(profileData.picks[siblingMatch.id] || null); }
                     nextRoundMatches.push({ id: nextMatchId, teams: nextTeams });
                 }
             }
             container.appendChild(roundDiv);
             currentRoundMatches = nextRoundMatches;
         }
+
         const champRound = document.createElement('div');
         champRound.className = 'round';
         champRound.innerHTML = `<div class="round-title">🏆 Champion</div>`;
         const champMatch = currentRoundMatches[0];
-        const champName = profileData[champMatch?.id] || 'TBD';
-        champRound.innerHTML += `<div class="matchup" style="border-color:gold; text-align:center; padding: 15px; font-weight:800; color:gold;">${champName}</div>`;
+        const champName = profileData.picks[champMatch?.id] || 'TBD';
+        champRound.innerHTML += `<div class="matchup" style="border-color:#fbbf24; text-align:center; padding: 20px; font-weight:900; color:#fbbf24; display:flex; align-items:center; justify-content:center; gap:10px;"><img class="flag-img" src="${getFlag(champName)}">${champName}</div>`;
         container.appendChild(champRound);
     }
+
     function selectWinner(roundIdx, matchIdx, matchId, selectedTeam) {
-        globalStore[currentProfile][matchId] = selectedTeam;
+        globalStore[currentProfile].picks[matchId] = selectedTeam;
         buildBracket();
     }
+
     function switchProfile(id) {
         currentProfile = id;
         document.querySelectorAll('.profile-btn').forEach((btn, idx) => { btn.classList.toggle('active', idx === id); });
         buildBracket();
     }
+
     function shareBracket() {
         const payload = btoa(JSON.stringify(globalStore));
         const shareUrl = `${window.location.origin}${window.location.pathname}?d=${payload}`;
-        navigator.clipboard.writeText(shareUrl).then(() => { alert("🔗 Application URL copied! Share it with your friends."); });
+        navigator.clipboard.writeText(shareUrl).then(() => { alert("🚀 Complete League League Synced! Send this link to Samit, Bhargav, and Bijay to view or edit their boards."); });
     }
+
     buildBracket();
 </script>
 </body>
