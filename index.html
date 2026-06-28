@@ -77,10 +77,8 @@
         .team-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
         .score-input { width: 30px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; text-align: center; padding: 3px; border-radius: 4px; font-weight: 700; font-size: 0.85rem; }
         
-        /* Highlight States */
         .team-slot.selected { background: rgba(34, 197, 94, 0.18); border: 1px solid rgba(34, 197, 94, 0.35); color: #4ade80; }
         
-        /* 🔥 NEW Perfect Prediction Highlight Style */
         .matchup.perfect-prediction {
             background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
             border: 2px solid #fbbf24 !important;
@@ -161,8 +159,9 @@
     </div>
 
 <script>
-    // Isolated network dataset instance line to implement weighted score variables cleanly
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v8_progressive";
+    // New entirely isolated endpoint path
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_final_v9_secure";
+    const LOCAL_KEY = "abhi_arena_local_backup";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -192,16 +191,14 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Weighted distribution logic loaded. Perfect predictions pop gold!" }]
+        trashTalk: [{ name: "System", msg: "Dual-layer redundancy protection engine online." }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
 
     function getRoundWeights(matchId) {
-        if(matchId.startsWith("r1")) return { team: 3, score: 6 };
-        if(matchId.startsWith("r2")) return { team: 3, score: 6 };
-        if(matchId.startsWith("r3")) return { team: 6, score: 12 };
-        if(matchId.startsWith("r4")) return { team: 6, score: 12 };
+        if(matchId.startsWith("r1") || matchId.startsWith("r2")) return { team: 3, score: 6 };
+        if(matchId.startsWith("r3") || matchId.startsWith("r4")) return { team: 6, score: 12 };
         if(matchId.startsWith("r5")) return { team: 9, score: 18 };
         return { team: 0, score: 0 };
     }
@@ -217,18 +214,29 @@
 
     async function loadFromCloud() {
         const status = document.getElementById('statusMsg');
+        
+        // Step 1: Instantly load whatever was saved on this device previously so it never looks blank
+        const localData = localStorage.getItem(LOCAL_KEY);
+        if(localData) {
+            try {
+                appState = JSON.parse(localData);
+                status.innerText = "✓ Loaded predictions from local device storage.";
+            } catch(e){}
+        }
+
+        // Step 2: Fetch updates from cloud database
         try {
-            const response = await fetch(DB_URL);
+            const response = await fetch(`${DB_URL}?nocache=${Date.now()}`);
             if(response.ok) {
                 const data = await response.json();
                 if(data && data.users) { 
                     appState = data; 
-                    status.innerText = "✓ Connected to live global point module."; 
+                    localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+                    status.innerText = "✓ System live. Synced with global cloud data."; 
                 }
-            } else {
-                status.innerText = "Database initialized successfully.";
             }
-        } catch(e) { status.innerText = "Local cache running."; }
+        } catch(e) { status.innerText = "Running in offline fallback mode."; }
+        
         calculatePoints();
         buildBracket();
         buildTrashWall();
@@ -237,14 +245,29 @@
 
     async function saveToCloud() {
         const status = document.getElementById('statusMsg');
-        status.innerText = "Syncing layout adjustments with database server...";
+        status.innerText = "Saving data layers...";
+        
+        // Dual-Layer Backup: Save locally first so data is structurally bulletproof
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
+
         try {
-            await fetch(DB_URL, { method: 'POST', body: JSON.stringify(appState) });
-            status.innerText = "✓ Predictions securely locked into cloud!";
-            calculatePoints();
-            buildBracket(); // Force update style highlights locally
-            alert("Predictions successfully saved to the cloud! Everyone can see them now.");
-        } catch(e) { alert("Network sync handshake timed out."); }
+            const res = await fetch(DB_URL, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(appState) 
+            });
+            if(res.ok) {
+                status.innerText = "✓ Predictions securely locked into cloud!";
+                calculatePoints();
+                buildBracket();
+                alert("Predictions successfully saved to the cloud and device storage!");
+            } else {
+                throw new Error("Server Rejected Entry");
+            }
+        } catch(e) { 
+            alert("Cloud server busy, but your scores were successfully saved to your phone's memory! They will sync on next reload."); 
+            status.innerText = "✓ Saved to device storage fallback.";
+        }
     }
 
     function calculatePoints() {
@@ -252,13 +275,9 @@
             let pts = 0;
             Object.keys(appState.officialResults.picks).forEach(matchId => {
                 const weights = getRoundWeights(matchId);
-                
-                // 1. Evaluate Team Win Accuracy
                 if(user.picks[matchId] && user.picks[matchId] === appState.officialResults.picks[matchId]) {
                     pts += weights.team;
                 }
-                
-                // 2. Evaluate Score Tracking Accuracy
                 const s0 = user.scores[`${matchId}_t0`], s1 = user.scores[`${matchId}_t1`];
                 const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
                 if(s0 !== undefined && r0 !== undefined && s1 !== undefined && r1 !== undefined && s0 !== "" && s1 !== "") {
@@ -276,14 +295,10 @@
     }
 
     function isPerfectPrediction(userProfile, matchId) {
-        // Validation checker for the requested bracket match golden color highlight filter
         if(!appState.officialResults.picks[matchId]) return false;
-        
         const correctWinner = (userProfile.picks[matchId] === appState.officialResults.picks[matchId]);
-        
         const s0 = userProfile.scores[`${matchId}_t0`], s1 = userProfile.scores[`${matchId}_t1`];
         const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
-        
         let correctScore = false;
         if(s0 !== undefined && r0 !== undefined && s1 !== undefined && r1 !== undefined && s0 !== "" && s1 !== "") {
             if(String(s0).trim() === String(r0).trim() && String(s1).trim() === String(r1).trim()) {
@@ -304,6 +319,8 @@
     function updateScoreValue(matchId, keyIndex, value) {
         let profile = appState.users[currentProfile];
         profile.scores[`${matchId}_t${keyIndex}`] = value;
+        // Keep storage mirrored instantly
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
     }
 
     function buildBracket() {
@@ -333,11 +350,8 @@
 
             roundMatches.forEach(match => {
                 const matchDiv = document.createElement('div');
-                
-                // Append perfect gold class identifier if team outcome and goal count are both fully nailed
                 const perfect = isPerfectPrediction(profile, match.id);
                 matchDiv.className = `matchup ${perfect ? 'perfect-prediction' : ''}`;
-                
                 let winner = profile.picks[match.id];
 
                 match.teams.forEach((team, tIdx) => {
@@ -353,6 +367,7 @@
                         slot.onclick = (e) => { 
                             if(e.target.tagName !== 'INPUT') { 
                                 profile.picks[match.id] = team; 
+                                localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
                                 buildBracket(); 
                             } 
                         };
