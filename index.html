@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏆 World Cup 2026 - Live Cloud Bracket League</title>
+    <title>🏆 World Cup 2026 - Ultimate Arena Pro</title>
     <style>
         :root {
-            --bg-layer: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 27, 75, 0.95) 100%);
-            --glass-bg: rgba(255, 255, 255, 0.04);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --bg-layer: linear-gradient(135deg, rgba(10, 15, 30, 0.92) 0%, rgba(20, 18, 55, 0.96) 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
             --accent-glow: #6366f1;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
@@ -28,226 +28,52 @@
             content: ""; position: absolute; top:0; left:0; right:0; bottom:0;
             background: var(--bg-layer); z-index: 0;
         }
-        header, .profile-bar, .bracket-container, .action-container, .status-bar {
+        header, .dashboard-grid, .profile-bar, .bracket-container, .action-container, .status-bar, .admin-panel, .rules-modal {
             position: relative; z-index: 1;
         }
-        header { text-align: center; margin-bottom: 1rem; }
+        header { text-align: center; margin-bottom: 0.5rem; }
         h1 {
             font-weight: 900; letter-spacing: -0.05em;
             background: linear-gradient(to right, #4f46e5, #c084fc, #db2777);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             margin: 0 0 0.5rem 0; text-transform: uppercase;
         }
-        .status-bar { text-align: center; font-size: 0.9rem; margin-bottom: 1.5rem; color: #10b981; font-weight: 600; min-height: 20px;}
-        .profile-bar { display: flex; justify-content: center; gap: 12px; margin-bottom: 3rem; flex-wrap: wrap; }
+        .status-bar { text-align: center; font-size: 0.85rem; margin-bottom: 1.5rem; color: #10b981; font-weight: 600; }
+        
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem; }
+        @media(max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+        .pane { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.25rem; backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; }
+        .pane-title { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; margin-top: 0; margin-bottom: 1rem; color: #f1f5f9; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        
+        .rules-btn { background: rgba(99, 102, 241, 0.2); border: 1px solid var(--accent-glow); color: #a5b4fc; padding: 4px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .rules-btn:hover { background: var(--accent-glow); color: white; }
+
+        .leaderboard-row { display: flex; justify-content: space-between; padding: 0.65rem 0.75rem; margin: 6px 0; border-radius: 10px; background: rgba(255,255,255,0.02); font-weight: 600; }
+        .leaderboard-row.rank-0 { background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.3); color: #fde047; }
+        
+        .trash-input-box { display: flex; gap: 8px; margin-top: 1rem; }
+        .chat-input { flex-grow: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 0.6rem; border-radius: 10px; font-weight: 500; }
+        .chat-btn { background: #6366f1; color: white; border: none; padding: 0 1rem; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .wall-msg { font-size: 0.9rem; padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .profile-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
         .profile-btn {
             background: rgba(15, 23, 42, 0.6); border: 1px solid var(--glass-border);
-            color: var(--text-muted); padding: 0.85rem 1.75rem; border-radius: 14px;
-            cursor: pointer; font-weight: 700; backdrop-filter: blur(10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted); padding: 0.75rem 1.5rem; border-radius: 14px;
+            cursor: pointer; font-weight: 700; transition: all 0.2s ease;
         }
-        .profile-btn.active {
-            color: white; background: rgba(99, 102, 241, 0.35);
-            border-color: #818cf8; box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);
-        }
-        .bracket-container { display: flex; gap: 2.5rem; overflow-x: auto; padding: 1rem 0; scroll-behavior: smooth; }
+        .profile-btn.active { color: white; background: rgba(99, 102, 241, 0.35); border-color: #818cf8; }
+        
+        .bracket-container { display: flex; gap: 2.5rem; overflow-x: auto; padding: 1rem 0; }
         .round { display: flex; flex-direction: column; justify-content: space-around; min-width: 280px; }
-        .round-title { text-align: center; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.15em; color: #cbd5e1; margin-bottom: 1.5rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .matchup { background: rgba(15, 23, 42, 0.55); border: 1px solid var(--glass-border); border-radius: 16px; padding: 8px; margin: 1.2rem 0; backdrop-filter: blur(16px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .team-slot { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0.85rem; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; margin: 4px 0; }
-        .team-slot:hover { background: rgba(255, 255, 255, 0.08); }
+        .round-title { text-align: center; font-size: 0.85rem; text-transform: uppercase; color: #cbd5e1; margin-bottom: 1rem; font-weight: 800; }
+        .matchup { background: rgba(15, 23, 42, 0.55); border: 1px solid var(--glass-border); border-radius: 16px; padding: 8px; margin: 1rem 0; }
+        .team-slot { display: flex; align-items: center; justify-content: space-between; padding: 0.7rem 0.85rem; border-radius: 10px; cursor: pointer; transition: all 0.15s ease; margin: 4px 0; }
         .team-meta { display: flex; align-items: center; gap: 10px; pointer-events: none; }
-        .flag-img { width: 24px; height: 16px; object-fit: cover; border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        .team-name { font-weight: 600; font-size: 0.95rem; }
-        .score-input { width: 35px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; text-align: center; padding: 4px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; }
+        .flag-img { width: 24px; height: 16px; object-fit: cover; border-radius: 3px; }
+        .score-input { width: 35px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; text-align: center; padding: 4px; border-radius: 6px; font-weight: 700; }
         .team-slot.selected { background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; }
-        .action-container { display: flex; justify-content: center; margin-top: 3.5rem; }
-        .share-btn { background: linear-gradient(90deg, #10b981, #059669); color: white; border: none; padding: 1.1rem 3rem; font-size: 1rem; font-weight: 800; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); transition: transform 0.2s; }
-        .share-btn:hover { transform: translateY(-2px); }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>WORLD CUP 2026 LIVE LEAGUE</h1>
-        <p style="color: var(--text-muted); font-weight: 500;">Cloud Connected • Real-Time Cross-Saving Enabled</p>
-    </header>
-
-    <div class="status-bar" id="statusMsg">Connecting to cloud database...</div>
-
-    <div class="profile-bar">
-        <button class="profile-btn active" onclick="switchProfile(0)">Abhi</button>
-        <button class="profile-btn" onclick="switchProfile(1)">Samit</button>
-        <button class="profile-btn" onclick="switchProfile(2)">Bhargav</button>
-        <button class="profile-btn" onclick="switchProfile(3)">Bijay</button>
-        <button class="profile-btn" onclick="switchProfile(4)">Shruti</button>
-    </div>
-
-    <div class="bracket-container" id="bracket"></div>
-
-    <div class="action-container">
-        <button class="share-btn" onclick="saveToCloud()">☁️ Save & Push Changes to Group</button>
-    </div>
-
-<script>
-    // Unique group key tailored to your repository name to map records cleanly
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_worldcup_2026";
-
-    const flags = {
-        "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
-        "Germany": "de", "Paraguay": "py", "Netherlands": "nl", "Morocco": "ma",
-        "Ivory Coast": "ci", "Norway": "no", "France": "fr", "Sweden": "se",
-        "Mexico": "mx", "Ecuador": "ec", "England": "gb", "DR Congo": "cd",
-        "Belgium": "be", "Senegal": "sn", "United States": "us", "Bosnia": "ba",
-        "Spain": "es", "Austria": "at", "Portugal": "pt", "Croatia": "hr",
-        "Switzerland": "ch", "Algeria": "dz", "Australia": "au", "Egypt": "eg",
-        "Argentina": "ar", "Cabo Verde": "cv", "Colombia": "co", "Ghana": "gh", "TBD": ""
-    };
-
-    const initialTeams = [
-        ["South Africa", "Canada"], ["Brazil", "Japan"], ["Germany", "Paraguay"], ["Netherlands", "Morocco"],
-        ["Ivory Coast", "Norway"], ["France", "Sweden"], ["Mexico", "Ecuador"], ["England", "DR Congo"],
-        ["Belgium", "Senegal"], ["United States", "Bosnia"], ["Spain", "Austria"], ["Portugal", "Croatia"],
-        ["Switzerland", "Algeria"], ["Australia", "Egypt"], ["Argentina", "Cabo Verde"], ["Colombia", "Ghana"]
-    ];
-
-    let currentProfile = 0;
-    let globalStore = [
-        { name: "Abhi", picks: {}, scores: {} },
-        { name: "Samit", picks: {}, scores: {} },
-        { name: "Bhargav", picks: {}, scores: {} },
-        { name: "Bijay", picks: {}, scores: {} },
-        { name: "Shruti", picks: {}, scores: {} }
-    ];
-
-    const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
-
-    function getFlag(team) {
-        if(!team || team === "TBD" || !flags[team]) return 'https://flagcdn.com/24x16/un.png';
-        return `https://flagcdn.com/24x16/${flags[team]}.png`;
-    }
-
-    async function loadFromCloud() {
-        const status = document.getElementById('statusMsg');
-        try {
-            const response = await fetch(DB_URL);
-            if(response.ok) {
-                const data = await response.json();
-                if(data && data.length === globalStore.length) {
-                    globalStore = data;
-                    status.innerText = "✓ Sync completed. All friend brackets are up to date.";
-                }
-            } else {
-                status.innerText = "First-time setup initialized. Ready to predict!";
-            }
-        } catch(e) {
-            status.innerText = "Offline mode active. Progress saving locally.";
-        }
-        buildBracket();
-    }
-
-    async function saveToCloud() {
-        const status = document.getElementById('statusMsg');
-        status.innerText = "Uploading predictions to shared database...";
-        try {
-            const response = await fetch(DB_URL, {
-                method: 'POST',
-                body: JSON.stringify(globalStore)
-            });
-            if(response.ok) {
-                status.innerText = "🚀 Saved! Your predictions are now updated live for everyone.";
-                alert("Saved completely! Anyone viewing your link will see these changes immediately.");
-            } else {
-                alert("Server sync issue. Try clicking save again.");
-            }
-        } catch(e) {
-            alert("Connection error. Could not upload bracket.");
-        }
-    }
-
-    function buildBracket() {
-        const container = document.getElementById('bracket');
-        container.innerHTML = '';
-        let currentRoundMatches = initialTeams.map((teams, index) => ({ id: `r1-m${index}`, teams }));
-        let profileData = globalStore[currentProfile];
-
-        for (let r = 0; r < 5; r++) {
-            const roundDiv = document.createElement('div');
-            roundDiv.className = 'round';
-            roundDiv.innerHTML = `<div class="round-title">${roundNames[r]}</div>`;
-            let nextRoundMatches = [];
-
-            for (let m = 0; m < currentRoundMatches.length; m++) {
-                const match = currentRoundMatches[m];
-                const matchDiv = document.createElement('div');
-                matchDiv.className = 'matchup';
-                const savedWinner = profileData.picks[match.id];
-
-                match.teams.forEach((team, tIdx) => {
-                    const displayTeam = team || 'TBD';
-                    const slot = document.createElement('div');
-                    slot.className = `team-slot ${savedWinner === displayTeam && displayTeam !== 'TBD' ? 'selected' : ''}`;
-                    
-                    const meta = document.createElement('div');
-                    meta.className = 'team-meta';
-                    meta.innerHTML = `<img class="flag-img" src="${getFlag(displayTeam)}"><span class="team-name">${displayTeam}</span>`;
-                    slot.appendChild(meta);
-
-                    if(displayTeam !== 'TBD') {
-                        slot.onclick = (e) => {
-                            if(e.target.tagName !== 'INPUT') selectWinner(r, m, match.id, displayTeam);
-                        };
-
-                        const scoreInput = document.createElement('input');
-                        scoreInput.type = 'text';
-                        scoreInput.className = 'score-input';
-                        scoreInput.maxLength = 2;
-                        const scoreKey = `${match.id}_t${tIdx}`;
-                        scoreInput.value = profileData.scores[scoreKey] || '';
-                        scoreInput.oninput = (e) => {
-                            profileData.scores[scoreKey] = e.target.value;
-                        };
-                        slot.appendChild(scoreInput);
-                    }
-                    matchDiv.appendChild(slot);
-                });
-
-                roundDiv.appendChild(matchDiv);
-
-                if (m % 2 === 0) {
-                    let nextMatchId = `r${r+2}-m${Math.floor(m/2)}`;
-                    let nextTeams = [profileData.picks[match.id] || null];
-                    let siblingMatch = currentRoundMatches[m+1];
-                    if (siblingMatch) { nextTeams.push(profileData.picks[siblingMatch.id] || null); }
-                    nextRoundMatches.push({ id: nextMatchId, teams: nextTeams });
-                }
-            }
-            container.appendChild(roundDiv);
-            currentRoundMatches = nextRoundMatches;
-        }
-
-        const champRound = document.createElement('div');
-        champRound.className = 'round';
-        champRound.innerHTML = `<div class="round-title">🏆 Champion</div>`;
-        const champMatch = currentRoundMatches[0];
-        const champName = profileData.picks[champMatch?.id] || 'TBD';
-        champRound.innerHTML += `<div class="matchup" style="border-color:#fbbf24; text-align:center; padding: 20px; font-weight:900; color:#fbbf24; display:flex; align-items:center; justify-content:center; gap:10px;"><img class="flag-img" src="${getFlag(champName)}">${champName}</div>`;
-        container.appendChild(champRound);
-    }
-
-    function selectWinner(roundIdx, matchIdx, matchId, selectedTeam) {
-        globalStore[currentProfile].picks[matchId] = selectedTeam;
-        buildBracket();
-    }
-
-    function switchProfile(id) {
-        currentProfile = id;
-        document.querySelectorAll('.profile-btn').forEach((btn, idx) => { btn.classList.toggle('active', idx === id); });
-        buildBracket();
-    }
-
-    // Run database instantiation on startup
-    loadFromCloud();
-</script>
-</body>
-</html>
+        
+        /* Modal Popup Window */
+        .modal
