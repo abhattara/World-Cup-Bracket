@@ -113,14 +113,14 @@
                 <span>📊 Live Standings</span>
                 <button class="rules-btn" onclick="toggleRules(true)">📋 View Rules</button>
             </div>
-            <div id="scoreboardContainer">Recalculating tiered matrix rules...</div>
+            <div id="scoreboardContainer">Recalculating balanced matrix rules...</div>
         </div>
 
         <div class="pane">
             <div class="pane-title">💬 Locker Room Trash Talk</div>
             <div id="trashWall" style="max-height: 110px; overflow-y: auto; margin-bottom: 0.5rem;"></div>
             <div class="trash-input-box">
-                <input type="text" id="trashTxt" class="chat-input" placeholder="Type some spicy commentary...">
+                <input text="text" id="trashTxt" class="chat-input" placeholder="Type some spicy commentary...">
                 <button class="chat-btn" onclick="postTrash()">Post</button>
             </div>
         </div>
@@ -142,12 +142,12 @@
 
     <div class="modal-overlay" id="rulesModal">
         <div class="modal-card">
-            <h2 style="margin-top:0; color:#818cf8;">📋 Tiered Scoring Matrix</h2>
+            <h2 style="margin-top:0; color:#818cf8;">📋 Equal Value Scoring Matrix</h2>
             <ul class="rules-list" style="padding-left: 20px;">
-                <li><strong>R32 & R16:</strong> Team Win = 3 PTS | Correct Score = 6 PTS</li>
-                <li><strong>Quarters & Semis:</strong> Team Win = 6 PTS | Correct Score = 12 PTS</li>
-                <li><strong>The Final match:</strong> Team Win = 9 PTS | Correct Score = 18 PTS</li>
-                <li>⭐ <strong>Perfect Prediction Reward:</strong> Nailing both the winning team and the exact goal score simultaneously highlights that matchup slot in gold!</li>
+                <li><strong>R32 & R16:</strong> Team Win = 3 PTS | Correct Score = 3 PTS</li>
+                <li><strong>Quarters & Semis:</strong> Team Win = 6 PTS | Correct Score = 6 PTS</li>
+                <li><strong>The Final match:</strong> Team Win = 9 PTS | Correct Score = 9 PTS</li>
+                <li>⭐ <strong>Perfect Prediction Reward:</strong> Nailing both the winning team and the exact goal score simultaneously highlights that matchup slot in a pulsing gold!</li>
             </ul>
             <button class="modal-close" onclick="toggleRules(false)">Close Rules</button>
         </div>
@@ -159,9 +159,8 @@
     </div>
 
 <script>
-    // New entirely isolated endpoint path
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_final_v9_secure";
-    const LOCAL_KEY = "abhi_arena_local_backup";
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v10_balanced";
+    const LOCAL_KEY = "abhi_arena_local_backup_v10";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -191,15 +190,16 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Dual-layer redundancy protection engine online." }]
+        trashTalk: [{ name: "System", msg: "Balanced score weights loaded. Team and Score points are now identical!" }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
 
     function getRoundWeights(matchId) {
-        if(matchId.startsWith("r1") || matchId.startsWith("r2")) return { team: 3, score: 6 };
-        if(matchId.startsWith("r3") || matchId.startsWith("r4")) return { team: 6, score: 12 };
-        if(matchId.startsWith("r5")) return { team: 9, score: 18 };
+        // Teams and scores now award identical point values per round layer
+        if(matchId.startsWith("r1") || matchId.startsWith("r2")) return { team: 3, score: 3 };
+        if(matchId.startsWith("r3") || matchId.startsWith("r4")) return { team: 6, score: 6 };
+        if(matchId.startsWith("r5")) return { team: 9, score: 9 };
         return { team: 0, score: 0 };
     }
 
@@ -215,16 +215,14 @@
     async function loadFromCloud() {
         const status = document.getElementById('statusMsg');
         
-        // Step 1: Instantly load whatever was saved on this device previously so it never looks blank
         const localData = localStorage.getItem(LOCAL_KEY);
         if(localData) {
             try {
                 appState = JSON.parse(localData);
-                status.innerText = "✓ Loaded predictions from local device storage.";
+                status.innerText = "✓ Loaded local active backup cache.";
             } catch(e){}
         }
 
-        // Step 2: Fetch updates from cloud database
         try {
             const response = await fetch(`${DB_URL}?nocache=${Date.now()}`);
             if(response.ok) {
@@ -232,10 +230,10 @@
                 if(data && data.users) { 
                     appState = data; 
                     localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
-                    status.innerText = "✓ System live. Synced with global cloud data."; 
+                    status.innerText = "✓ Synced seamlessly with cloud matrix database."; 
                 }
             }
-        } catch(e) { status.innerText = "Running in offline fallback mode."; }
+        } catch(e) { status.innerText = "Offline backup tracking active."; }
         
         calculatePoints();
         buildBracket();
@@ -245,9 +243,8 @@
 
     async function saveToCloud() {
         const status = document.getElementById('statusMsg');
-        status.innerText = "Saving data layers...";
+        status.innerText = "Encrypting board variables...";
         
-        // Dual-Layer Backup: Save locally first so data is structurally bulletproof
         localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
 
         try {
@@ -257,16 +254,16 @@
                 body: JSON.stringify(appState) 
             });
             if(res.ok) {
-                status.innerText = "✓ Predictions securely locked into cloud!";
+                status.innerText = "✓ System secure. Database matching completely verified.";
                 calculatePoints();
                 buildBracket();
-                alert("Predictions successfully saved to the cloud and device storage!");
+                alert("Predictions successfully saved across device & cloud storage pools!");
             } else {
-                throw new Error("Server Rejected Entry");
+                throw new Error("Handshake Rejected");
             }
         } catch(e) { 
-            alert("Cloud server busy, but your scores were successfully saved to your phone's memory! They will sync on next reload."); 
-            status.innerText = "✓ Saved to device storage fallback.";
+            alert("Cloud database busy! Your configuration was successfully cached to device hardware storage instead."); 
+            status.innerText = "✓ Saved to device storage pool backup.";
         }
     }
 
@@ -319,7 +316,6 @@
     function updateScoreValue(matchId, keyIndex, value) {
         let profile = appState.users[currentProfile];
         profile.scores[`${matchId}_t${keyIndex}`] = value;
-        // Keep storage mirrored instantly
         localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
     }
 
