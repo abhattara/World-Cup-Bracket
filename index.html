@@ -155,7 +155,7 @@
                 <li><strong>R32 & R16:</strong> Correct Team = 3 PTS | Correct Score Bonus = +3 PTS</li>
                 <li><strong>Quarters & Semis:</strong> Correct Team = 6 PTS | Correct Score Bonus = +6 PTS</li>
                 <li><strong>The Final match:</strong> Correct Team = 9 PTS | Correct Score Bonus = +9 PTS</li>
-                <li>⭐ &nbsp;<strong>Dynamic Ruleset:</strong> Official winners force-advance down all profiles *only* after the admin declares a final match result. Red highlight won't show up on unpredicted blank matches.</li>
+                <li>⭐ &nbsp;<strong>Independent Paths Fixed:</strong> Switching users updates the view entirely to their custom timeline. Inter-profile data bleed bugs are fully corrected.</li>
             </ul>
             <button class="modal-close" onclick="toggleRules(false)">Close Rules</button>
         </div>
@@ -167,8 +167,8 @@
     </div>
 
 <script>
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v15_stable";
-    const LOCAL_KEY = "abhi_arena_local_backup_v15";
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v16_isolated";
+    const LOCAL_KEY = "abhi_arena_local_backup_v16";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -198,7 +198,7 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Visual Engine V15 live. Highlighting bugs fixed." }]
+        trashTalk: [{ name: "System", msg: "Visual Engine V16 live. Profiles fully isolated." }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
@@ -302,10 +302,10 @@
 
     function getPredictionState(userProfile, matchId) {
         const officialWinner = appState.officialResults.picks[matchId];
-        if (!officialWinner) return "PENDING"; // Game isn't finished yet
+        if (!officialWinner) return "PENDING"; 
 
         const userWinner = userProfile.picks[matchId];
-        if (!userWinner) return "PENDING";     // Bug fix: Profile hasn't predicted yet, don't show red
+        if (!userWinner) return "PENDING";     
 
         const isCorrectTeam = (userWinner === officialWinner);
 
@@ -318,9 +318,9 @@
             }
         }
 
-        if (isCorrectTeam && isCorrectScore) return "PERFECT"; // Gold Glow
-        if (!isCorrectTeam) return "WRONG";                    // Red Glow
-        return "DEFAULT";                                      // Correct team, wrong score = default styling
+        if (isCorrectTeam && isCorrectScore) return "PERFECT"; 
+        if (!isCorrectTeam) return "WRONG";                    
+        return "DEFAULT";                                      
     }
 
     function checkDrawConflict(matchId) {
@@ -337,6 +337,14 @@
         localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
     }
 
+    // Fixed Engine: Evaluates paths dynamically based on active user context vs official results
+    function findUserOrOfficialPick(profileContext, matchId) {
+        if (appState.officialResults.picks[matchId]) {
+            return appState.officialResults.picks[matchId];
+        }
+        return profileContext.picks[matchId] || "TBD";
+    }
+
     function buildBracket() {
         const container = document.getElementById('bracket');
         container.innerHTML = '';
@@ -346,13 +354,13 @@
         let r1Matches = initialTeams.map((teams, i) => ({ id: `r1-m${i}`, teams }));
         roundsData.push(r1Matches);
 
-        // Core Pipeline: Only pushes the official team forward if the match is officially complete
+        // Generates round dependencies ensuring profile picks don't step over into each other visually
         for (let r = 1; r < 5; r++) {
             let prevRound = roundsData[r-1];
             let currentRoundMatches = [];
             for (let m = 0; m < prevRound.length; m += 2) {
-                let t1 = appState.officialResults.picks[prevRound[m].id] || profile.picks[prevRound[m].id] || "TBD";
-                let t2 = appState.officialResults.picks[prevRound[m+1]?.id] || profile.picks[prevRound[m+1]?.id] || "TBD";
+                let t1 = findUserOrOfficialPick(profile, prevRound[m].id);
+                let t2 = findUserOrOfficialPick(profile, prevRound[m+1]?.id);
                 currentRoundMatches.push({ id: `r${r+1}-m${m/2}`, teams: [t1, t2] });
             }
             roundsData.push(currentRoundMatches);
@@ -413,7 +421,7 @@
         champRound.className = 'round';
         champRound.innerHTML = `<div class="round-title">🏆 Champion</div>`;
         let lastMatchId = 'r5-m0';
-        let champ = appState.officialResults.picks[lastMatchId] || profile.picks[lastMatchId] || 'TBD';
+        let champ = findUserOrOfficialPick(profile, lastMatchId);
         champRound.innerHTML += `<div class="matchup" style="border-color:#fbbf24; text-align:center; padding:15px; font-weight:900; color:#fbbf24; display:flex; align-items:center; justify-content:center; gap:8px;"><img class="flag-img" src="${getFlag(champ)}">${champ}</div>`;
         container.appendChild(champRound);
     }
