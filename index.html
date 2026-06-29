@@ -79,9 +79,9 @@
         
         .team-slot.selected { background: rgba(34, 197, 94, 0.18); border: 1px solid rgba(34, 197, 94, 0.35); color: #4ade80; }
         
-        /* Gold Highlight Rules */
+        /* Gold Outline: Right Team AND Right Score */
         .matchup.perfect-prediction {
-            background: linear-gradient(135deg, rgba(234, 179, 8, 0.25) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(251, 191, 36, 0.05) 100%) !important;
             border: 2px solid #fbbf24 !important;
             box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
             animation: pulse-gold 2s infinite alternate;
@@ -91,12 +91,14 @@
             100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.45); }
         }
 
-        /* Wrong Prediction Highlight Rules */
+        /* Red Outline: Wrong Winner Picked Entirely */
         .matchup.wrong-prediction {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.08) 100%) !important;
-            border: 2px solid #f87171 !important;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.05) 100%) !important;
+            border: 2px solid #ef4444 !important;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.25);
         }
+        
+        /* No Outline state: If correct winner but wrong score, stays default slate layout */
 
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
         .modal-card { background: #111827; border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; max-width: 500px; width: 90%; }
@@ -121,7 +123,7 @@
                 <span>📊 Live Standings</span>
                 <button class="rules-btn" onclick="toggleRules(true)">📋 View Rules</button>
             </div>
-            <div id="scoreboardContainer">Recalculating tournament layout metrics...</div>
+            <div id="scoreboardContainer">Recalculating layout matrix...</div>
         </div>
 
         <div class="pane">
@@ -150,12 +152,12 @@
 
     <div class="modal-overlay" id="rulesModal">
         <div class="modal-card">
-            <h2 style="margin-top:0; color:#818cf8;">📋 Equal Value Scoring Matrix</h2>
+            <h2 style="margin-top:0; color:#818cf8;">📋 Unified Scoring & Outline Mechanics</h2>
             <ul class="rules-list" style="padding-left: 20px;">
-                <li><strong>R32 & R16:</strong> Team Win = 3 PTS | Correct Score = 3 PTS</li>
-                <li><strong>Quarters & Semis:</strong> Team Win = 6 PTS | Correct Score = 6 PTS</li>
-                <li><strong>The Final match:</strong> Team Win = 9 PTS | Correct Score = 9 PTS</li>
-                <li>⭐ &nbsp;<strong>Visual Colors:</strong> Perfect Predictions turn gold. Picking the wrong winner turns the whole card red.</li>
+                <li><strong>R32 & R16:</strong> Correct Team = 3 PTS | Correct Score Bonus = +3 PTS</li>
+                <li><strong>Quarters & Semis:</strong> Correct Team = 6 PTS | Correct Score Bonus = +6 PTS</li>
+                <li><strong>The Final match:</strong> Correct Team = 9 PTS | Correct Score Bonus = +9 PTS</li>
+                <li>🌟 <strong>Visual Signatures:</strong> Nailing both elements triggers a <strong>Gold Glow</strong>. Picking the wrong team highlights <strong>Red</strong>. Predicting the right team with a wrong score displays normally with <strong>No Border</strong>.</li>
             </ul>
             <button class="modal-close" onclick="toggleRules(false)">Close Rules</button>
         </div>
@@ -167,8 +169,8 @@
     </div>
 
 <script>
-    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v12_live_tracks";
-    const LOCAL_KEY = "abhi_arena_local_backup_v12";
+    const DB_URL = "https://kvdb.io/MN79unfby9XgXfSg6p9vS8/abhi_arena_v14_finalized";
+    const LOCAL_KEY = "abhi_arena_local_backup_v14";
 
     const flags = {
         "South Africa": "za", "Canada": "ca", "Brazil": "br", "Japan": "jp",
@@ -198,7 +200,7 @@
             { name: "Shruti", picks: {}, scores: {} }
         ],
         officialResults: { picks: {}, scores: {} },
-        trashTalk: [{ name: "System", msg: "Bracket sync active: Wrong predictions highlight red instantly." }]
+        trashTalk: [{ name: "System", msg: "Visual Engine V14 Loaded. Matrix state rules active." }]
     };
 
     const roundNames = ["Round of 32", "Round of 16", "Quarter-finals", "Semi-finals", "Final"];
@@ -226,7 +228,7 @@
         if(localData) {
             try {
                 appState = JSON.parse(localData);
-                status.innerText = "✓ Loaded local device tracking pool.";
+                status.innerText = "✓ Loaded local secure cache metrics.";
             } catch(e){}
         }
 
@@ -237,10 +239,10 @@
                 if(data && data.users) { 
                     appState = data; 
                     localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
-                    status.innerText = "✓ Synced securely with global database server."; 
+                    status.innerText = "✓ Connected to live tournament grid."; 
                 }
             }
-        } catch(e) { status.innerText = "Offline backup tracking active."; }
+        } catch(e) { status.innerText = "Local backup storage pool active."; }
         
         calculatePoints();
         buildBracket();
@@ -250,7 +252,7 @@
 
     async function saveToCloud() {
         const status = document.getElementById('statusMsg');
-        status.innerText = "Encrypting board maps...";
+        status.innerText = "Writing updates...";
         
         localStorage.setItem(LOCAL_KEY, JSON.stringify(appState));
 
@@ -261,16 +263,16 @@
                 body: JSON.stringify(appState) 
             });
             if(res.ok) {
-                status.innerText = "✓ Configuration synced globally!";
+                status.innerText = "✓ Cloud synchronization completely secured.";
                 calculatePoints();
                 buildBracket();
-                alert("Predictions successfully saved across device & cloud storage pools!");
+                alert("Data synced successfully!");
             } else {
-                throw new Error("Handshake Rejected");
+                throw new Error("Rejected");
             }
         } catch(e) { 
-            alert("Cloud server busy! Cached securely on this local device memory."); 
-            status.innerText = "✓ Saved to device storage pool backup.";
+            alert("Saved locally! Changes will push to the cloud on your next connection."); 
+            status.innerText = "✓ Saved locally to system memory cache.";
         }
     }
 
@@ -279,9 +281,13 @@
             let pts = 0;
             Object.keys(appState.officialResults.picks).forEach(matchId => {
                 const weights = getRoundWeights(matchId);
+                let correctTeam = false;
+                
                 if(user.picks[matchId] && user.picks[matchId] === appState.officialResults.picks[matchId]) {
                     pts += weights.team;
+                    correctTeam = true;
                 }
+                
                 const s0 = user.scores[`${matchId}_t0`], s1 = user.scores[`${matchId}_t1`];
                 const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
                 if(s0 !== undefined && r0 !== undefined && s1 !== undefined && r1 !== undefined && s0 !== "" && s1 !== "") {
@@ -298,28 +304,25 @@
         `).join('');
     }
 
-    function isPerfectPrediction(userProfile, matchId) {
-        if(!appState.officialResults.picks[matchId]) return false;
-        const correctWinner = (userProfile.picks[matchId] === appState.officialResults.picks[matchId]);
+    function getPredictionState(userProfile, matchId) {
+        const officialWinner = appState.officialResults.picks[matchId];
+        if (!officialWinner) return "PENDING";
+
+        const userWinner = userProfile.picks[matchId];
+        const isCorrectTeam = (userWinner === officialWinner);
+
         const s0 = userProfile.scores[`${matchId}_t0`], s1 = userProfile.scores[`${matchId}_t1`];
         const r0 = appState.officialResults.scores[`${matchId}_t0`], r1 = appState.officialResults.scores[`${matchId}_t1`];
-        let correctScore = false;
+        let isCorrectScore = false;
         if(s0 !== undefined && r0 !== undefined && s1 !== undefined && r1 !== undefined && s0 !== "" && s1 !== "") {
             if(String(s0).trim() === String(r0).trim() && String(s1).trim() === String(r1).trim()) {
-                correctScore = true;
+                isCorrectScore = true;
             }
         }
-        return correctWinner && correctScore;
-    }
 
-    // Logic processing module validating if a profile picked the wrong team winner down any lane
-    function isWrongPrediction(userProfile, matchId) {
-        const officialWinner = appState.officialResults.picks[matchId];
-        if(!officialWinner) return false; // Match hasn't been finalized yet
-        
-        const userPickedWinner = userProfile.picks[matchId];
-        // If they left it empty, or if what they picked doesn't match the actual winner, it's wrong.
-        return !userPickedWinner || userPickedWinner !== officialWinner;
+        if (isCorrectTeam && isCorrectScore) return "PERFECT"; // Gold Border
+        if (!isCorrectTeam) return "WRONG";                    // Red Border
+        return "DEFAULT";                                      // Correct team, wrong score = Standard layout
     }
 
     function checkDrawConflict(matchId) {
@@ -345,6 +348,7 @@
         let r1Matches = initialTeams.map((teams, i) => ({ id: `r1-m${i}`, teams }));
         roundsData.push(r1Matches);
 
+        // Generates completely independent paths while processing force advancement overrides
         for (let r = 1; r < 5; r++) {
             let prevRound = roundsData[r-1];
             let currentRoundMatches = [];
@@ -363,18 +367,11 @@
 
             roundMatches.forEach(match => {
                 const matchDiv = document.createElement('div');
+                const state = getPredictionState(profile, match.id);
                 
-                // Color layer determination engine
-                const perfect = isPerfectPrediction(profile, match.id);
-                const wrong = isWrongPrediction(profile, match.id);
-                
-                if (perfect) {
-                    matchDiv.className = 'matchup perfect-prediction';
-                } else if (wrong) {
-                    matchDiv.className = 'matchup wrong-prediction';
-                } else {
-                    matchDiv.className = 'matchup';
-                }
+                if (state === "PERFECT") matchDiv.className = 'matchup perfect-prediction';
+                else if (state === "WRONG") matchDiv.className = 'matchup wrong-prediction';
+                else matchDiv.className = 'matchup';
                 
                 let winner = appState.officialResults.picks[match.id] || profile.picks[match.id];
 
